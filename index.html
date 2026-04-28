@@ -1,442 +1,630 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Crown, Wallet, User, LogIn, X, Check, ChevronRight, Zap, Star } from 'lucide-react';
-
-const App = () => {
-  // 狀態管理
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [user, setUser] = useState(null); // null 表示未登入, object 表示已登入
-  const [activeModal, setActiveModal] = useState(null); // 'login', 'register', 'topup', null
-  const [selectedPlan, setSelectedPlan] = useState(null); // 準備購買的方案
-
-  // 監聽滾動以改變 Navbar 樣式
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // 模擬方案資料
-  const plans = [
-    {
-      id: 'basic',
-      name: '基礎會員',
-      price: 300,
-      features: ['解鎖 720p 高畫質', '每月可觀看 50 部影片', '無廣告體驗'],
-      color: 'from-blue-500 to-cyan-400',
-      icon: <Play className="w-6 h-6" />
-    },
-    {
-      id: 'premium',
-      name: '尊榮 VIP',
-      price: 800,
-      features: ['解鎖 4K 超高畫質', '無限次數觀看', '無廣告體驗', '優先觀看最新上架影片', '專屬客服'],
-      color: 'from-amber-400 to-orange-500',
-      icon: <Crown className="w-6 h-6" />,
-      popular: true
-    },
-    {
-      id: 'ultimate',
-      name: '無限暢看通行證',
-      price: 1500,
-      features: ['包含 VIP 所有功能', '可支援 4 個裝置同時觀看', '線下影片下載', '專屬實體活動邀請'],
-      color: 'from-purple-500 to-pink-500',
-      icon: <Star className="w-6 h-6" />
-    }
-  ];
-
-  // 模擬熱門影片資料
-  const videos = [
-    { id: 1, title: "霓虹之城：暗影", img: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&q=80&w=800&h=450" },
-    { id: 2, title: "星際迷航：重啟", img: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&q=80&w=800&h=450" },
-    { id: 3, title: "都市傳說：第四象限", img: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=800&h=450" },
-    { id: 4, title: "極限狂飆：東京", img: "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=800&h=450" },
-  ];
-
-  // 處理訂閱邏輯
-  const handleSubscribeClick = (plan) => {
-    if (!user) {
-      setActiveModal('login');
-      return;
-    }
-    setSelectedPlan(plan);
-    if (user.points < plan.price) {
-      // 點數不足，引導儲值
-      setActiveModal('topup');
-    } else {
-      // 點數足夠，直接扣款 (模擬)
-      setUser(prev => ({
-        ...prev,
-        points: prev.points - plan.price,
-        subscription: plan.name
-      }));
-      alert(`🎉 成功訂閱「${plan.name}」！開始您的專屬影音饗宴。`);
-      setSelectedPlan(null);
-    }
-  };
-
-  // 模擬儲值點數
-  const handleTopUp = (amount) => {
-    setUser(prev => ({
-      ...prev,
-      points: prev.points + amount
-    }));
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juicy Stream - 探索無盡的影音極致感官</title>
     
-    // 如果有正在等待購買的方案且餘額已足夠
-    if (selectedPlan && (user.points + amount) >= selectedPlan.price) {
-      const confirmBuy = window.confirm(`儲值成功！您現在有足夠點數訂閱「${selectedPlan.name}」，是否立即訂閱？`);
-      if (confirmBuy) {
-        setUser(prev => ({
-          ...prev,
-          points: (prev.points + amount) - selectedPlan.price,
-          subscription: selectedPlan.name
-        }));
-        alert(`🎉 成功訂閱「${selectedPlan.name}」！`);
-        setSelectedPlan(null);
-      }
-    } else {
-      alert(`💰 成功儲值 ${amount} 點！`);
-    }
-    setActiveModal(null);
-  };
+    <!-- 引入 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-  // UI 元件：Modal 彈窗
-  const Modal = ({ title, children }) => (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-all p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative animate-in fade-in zoom-in duration-300">
-        <button 
-          onClick={() => { setActiveModal(null); setSelectedPlan(null); }}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white transition"
-        >
-          <X className="w-6 h-6" />
-        </button>
-        <div className="p-6 border-b border-slate-800">
-          <h3 className="text-xl font-bold text-white">{title}</h3>
-        </div>
-        <div className="p-6">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-amber-500/30">
-      
-      {/* 導覽列 Navbar */}
-      <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-slate-950/90 backdrop-blur-md shadow-lg py-3' : 'bg-transparent py-5'}`}>
-        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center">
-              <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
-            </div>
-            <span className="text-2xl font-bold tracking-wider text-white">Juicy Stream</span>
-          </div>
-          
-          <div className="flex items-center gap-6">
-            <a href="#plans" className="hidden md:block text-slate-300 hover:text-white transition">訂閱方案</a>
-            <a href="#videos" className="hidden md:block text-slate-300 hover:text-white transition">發燒熱門</a>
-            
-            {user ? (
-              <div className="flex items-center gap-4 ml-4 pl-4 border-l border-slate-700">
-                <div className="flex flex-col items-end">
-                  <span className="text-xs text-slate-400">目前餘額</span>
-                  <div className="flex items-center gap-1 text-amber-400 font-bold">
-                    <Zap className="w-4 h-4" fill="currentColor" />
-                    {user.points} 點
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setActiveModal('topup')}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2"
-                >
-                  <Wallet className="w-4 h-4" />
-                  儲值
-                </button>
-                <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 cursor-pointer" title={user.subscription ? `已訂閱: ${user.subscription}` : '未訂閱'}>
-                  <User className="w-5 h-5 text-slate-300" />
-                  {user.subscription && <div className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-950"></div>}
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setActiveModal('login')}
-                  className="px-5 py-2 text-slate-300 hover:text-white font-medium transition"
-                >
-                  登入
-                </button>
-                <button 
-                  onClick={() => setActiveModal('register')}
-                  className="px-5 py-2 bg-white text-slate-900 rounded-full font-bold hover:bg-slate-200 transition shadow-[0_0_15px_rgba(255,255,255,0.2)]"
-                >
-                  免費註冊
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero 滿版動態影片 Section */}
-      <section className="relative w-full h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
-        {/* 背景影片 (使用開源素材) */}
-        <div className="absolute inset-0 w-full h-full">
-          <video 
-            autoPlay 
-            loop 
-            muted 
-            playsInline
-            className="w-full h-full object-cover scale-105"
-            poster="https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=2000"
-          >
-            <source src="https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" type="video/mp4" />
-          </video>
-          {/* 質感漸層遮罩 */}
-          <div className="absolute inset-0 bg-slate-950/40"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-transparent to-transparent"></div>
-        </div>
-
-        {/* Hero 內容 */}
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 mt-20">
-          <div className="max-w-2xl">
-            <span className="inline-block py-1 px-3 rounded-full bg-slate-800/80 border border-slate-700 text-amber-400 text-sm font-semibold mb-6 backdrop-blur-sm">
-              ✨ 2026 全新高畫質串流體驗
-            </span>
-            <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight mb-6 text-shadow-xl">
-              探索無盡的 <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">
-                影音極致感官
-              </span>
-            </h1>
-            <p className="text-lg md:text-xl text-slate-300 mb-10 leading-relaxed max-w-lg">
-              加入 Juicy Stream，隨心所欲觀看成千上萬部精選影片。彈性點數訂閱制，讓每一分錢都花在刀口上。
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button 
-                onClick={() => {
-                  const plansSection = document.getElementById('plans');
-                  plansSection.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full text-white font-bold text-lg hover:scale-105 transition shadow-[0_0_30px_rgba(245,158,11,0.4)] flex items-center justify-center gap-2"
-              >
-                立即查看方案 <ChevronRight className="w-5 h-5" />
-              </button>
-              <button className="px-8 py-4 bg-slate-800/80 backdrop-blur-md border border-slate-600 rounded-full text-white font-bold text-lg hover:bg-slate-700 transition flex items-center justify-center gap-2">
-                <Play className="w-5 h-5" /> 觀看預告
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 推薦影片 Section (示意展示質感) */}
-      <section id="videos" className="py-20 relative z-20 bg-slate-950">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex justify-between items-end mb-10">
-            <div>
-              <h2 className="text-3xl font-bold text-white mb-2">發燒熱門影片</h2>
-              <p className="text-slate-400">目前平台最受歡迎的精選內容</p>
-            </div>
-            <button className="text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1">
-              查看全部 <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {videos.map((video) => (
-              <div key={video.id} className="group relative rounded-xl overflow-hidden cursor-pointer aspect-video bg-slate-800">
-                <img src={video.img} alt={video.title} className="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="absolute bottom-0 left-0 p-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                  <h3 className="text-lg font-bold text-white">{video.title}</h3>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="px-2 py-0.5 bg-amber-500 rounded text-xs font-bold text-black">4K</span>
-                    <span className="text-xs text-slate-300">VIP 限定</span>
-                  </div>
-                </div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
-                  <Play className="w-5 h-5 text-white ml-1" fill="currentColor" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 點數與訂閱方案 Section */}
-      <section id="plans" className="py-24 bg-slate-900 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">彈性訂閱，隨心所欲</h2>
-            <p className="text-slate-400 text-lg">
-              先儲值點數，再選擇最適合您的觀看方案。<br />隨時升級、隨時取消，完全由您掌控。
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {plans.map((plan) => (
-              <div 
-                key={plan.id} 
-                className={`relative rounded-3xl p-8 bg-slate-950 border transition-all duration-300 hover:-translate-y-2
-                  ${plan.popular ? 'border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.15)]' : 'border-slate-800 hover:border-slate-600'}
-                `}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full text-black text-sm font-bold shadow-lg">
-                    最受歡迎 / 最佳 CP 值
-                  </div>
-                )}
-                
-                <div className={`w-14 h-14 rounded-2xl mb-6 flex items-center justify-center bg-gradient-to-br ${plan.color}`}>
-                  {plan.icon}
-                </div>
-                
-                <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-4xl font-extrabold text-white">{plan.price}</span>
-                  <span className="text-slate-400">點 / 月</span>
-                </div>
-                
-                <ul className="space-y-4 mb-8 min-h-[200px]">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3 text-slate-300">
-                      <div className="mt-1 bg-slate-800 rounded-full p-0.5">
-                        <Check className="w-3 h-3 text-green-400" />
-                      </div>
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                
-                <button 
-                  onClick={() => handleSubscribeClick(plan)}
-                  className={`w-full py-4 rounded-xl font-bold text-lg transition-all
-                    ${user?.subscription === plan.name 
-                      ? 'bg-slate-800 text-slate-400 cursor-default' 
-                      : plan.popular 
-                        ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-black hover:shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:scale-[1.02]' 
-                        : 'bg-slate-800 text-white hover:bg-slate-700 hover:scale-[1.02]'
+    <!-- 自訂 Tailwind 設定與額外 CSS -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
                     }
-                  `}
-                  disabled={user?.subscription === plan.name}
-                >
-                  {user?.subscription === plan.name ? '目前方案' : '立即訂閱'}
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 引入 Google 字體以提升質感 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        
+        body {
+            background-color: #020617; /* slate-950 */
+            color: #f1f5f9; /* slate-100 */
+        }
+
+        /* 文字發光特效 */
+        .text-shadow-xl {
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Modal 彈出動畫 */
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-animate {
+            animation: zoomIn 0.3s ease-out forwards;
+        }
+
+        /* 隱藏元素用的 class */
+        .hidden-el {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans selection:bg-amber-500/30">
+
+    <!-- 導覽列 Navbar -->
+    <nav id="navbar" class="fixed w-full z-50 transition-all duration-300 bg-transparent py-5">
+        <div class="max-w-7xl mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center">
+                    <i data-lucide="play" class="w-5 h-5 text-white ml-0.5 fill-current"></i>
+                </div>
+                <span class="text-2xl font-bold tracking-wider text-white">Juicy Stream</span>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <a href="#plans" class="hidden md:block text-slate-300 hover:text-white transition">訂閱方案</a>
+                <a href="#videos" class="hidden md:block text-slate-300 hover:text-white transition">發燒熱門</a>
+                
+                <!-- 未登入狀態 UI -->
+                <div id="auth-guest" class="flex items-center gap-3">
+                    <button onclick="openModal('login')" class="px-5 py-2 text-slate-300 hover:text-white font-medium transition">登入</button>
+                    <button onclick="openModal('register')" class="px-5 py-2 bg-white text-slate-900 rounded-full font-bold hover:bg-slate-200 transition shadow-[0_0_15px_rgba(255,255,255,0.2)]">免費註冊</button>
+                </div>
+
+                <!-- 已登入狀態 UI (預設隱藏) -->
+                <div id="auth-user" class="hidden-el items-center gap-4 ml-4 pl-4 border-l border-slate-700">
+                    <div class="flex flex-col items-end">
+                        <span class="text-xs text-slate-400">目前餘額</span>
+                        <div class="flex items-center gap-1 text-amber-400 font-bold">
+                            <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+                            <span id="user-points-display">0</span> 點
+                        </div>
+                    </div>
+                    <button onclick="openModal('topup')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
+                        <i data-lucide="wallet" class="w-4 h-4"></i> 儲值
+                    </button>
+                    <div id="user-avatar" class="relative w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 cursor-pointer" title="未訂閱">
+                        <i data-lucide="user" class="w-5 h-5 text-slate-300"></i>
+                        <div id="user-subscription-badge" class="hidden-el absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-950"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero 滿版動態影片 Section -->
+    <section class="relative w-full h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
+        <div class="absolute inset-0 w-full h-full">
+            <video autoplay loop muted playsinline class="w-full h-full object-cover scale-105" poster="https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=2000">
+                <source src="https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" type="video/mp4" />
+            </video>
+            <div class="absolute inset-0 bg-slate-950/40"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-transparent to-transparent"></div>
+        </div>
+
+        <div class="relative z-10 w-full max-w-7xl mx-auto px-6 mt-20">
+            <div class="max-w-2xl">
+                <span class="inline-block py-1 px-3 rounded-full bg-slate-800/80 border border-slate-700 text-amber-400 text-sm font-semibold mb-6 backdrop-blur-sm">
+                    ✨ 2026 全新高畫質串流體驗
+                </span>
+                <h1 class="text-5xl md:text-7xl font-extrabold text-white leading-tight mb-6 text-shadow-xl">
+                    探索無盡的 <br />
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">影音極致感官</span>
+                </h1>
+                <p class="text-lg md:text-xl text-slate-300 mb-10 leading-relaxed max-w-lg">
+                    加入 Juicy Stream，隨心所欲觀看成千上萬部精選影片。彈性點數訂閱制，讓每一分錢都花在刀口上。
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button onclick="document.getElementById('plans').scrollIntoView({ behavior: 'smooth' })" class="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full text-white font-bold text-lg hover:scale-105 transition shadow-[0_0_30px_rgba(245,158,11,0.4)] flex items-center justify-center gap-2">
+                        立即查看方案 <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                    <button class="px-8 py-4 bg-slate-800/80 backdrop-blur-md border border-slate-600 rounded-full text-white font-bold text-lg hover:bg-slate-700 transition flex items-center justify-center gap-2">
+                        <i data-lucide="play" class="w-5 h-5"></i> 觀看預告
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 推薦影片 Section -->
+    <section id="videos" class="py-20 relative z-20 bg-slate-950">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex justify-between items-end mb-10">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2">發燒熱門影片</h2>
+                    <p class="text-slate-400">目前平台最受歡迎的精選內容</p>
+                </div>
+                <button class="text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1">
+                    查看全部 <i data-lucide="chevron-right" class="w-4 h-4"></i>
                 </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-slate-950 py-12 border-t border-slate-900 text-center text-slate-500">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Play className="w-5 h-5 text-amber-500" fill="currentColor" />
-          <span className="text-xl font-bold text-white tracking-wider">Juicy Stream</span>
-        </div>
-        <p className="text-sm">© 2026 Juicy Stream. 電商神助手團隊示範原型. All rights reserved.</p>
-      </footer>
-
-      {/* 互動 Modals */}
-      {activeModal === 'login' && (
-        <Modal title="登入會員">
-          <p className="text-slate-400 mb-6">歡迎回來，請登入以繼續您的影音體驗。</p>
-          <div className="space-y-4">
-            <input type="email" placeholder="電子郵件" className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition" />
-            <input type="password" placeholder="密碼" className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition" />
-            <button 
-              onClick={() => {
-                setUser({ name: 'User', points: 0, subscription: null });
-                setActiveModal(null);
-                alert('登入成功！(示範體驗，預設點數為 0)');
-              }}
-              className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 rounded-xl transition mt-2"
-            >
-              登入
-            </button>
-            <div className="text-center mt-4 text-sm text-slate-400">
-              還沒有帳號嗎？ <button onClick={() => setActiveModal('register')} className="text-amber-400 hover:underline">立即註冊</button>
             </div>
-          </div>
-        </Modal>
-      )}
-
-      {activeModal === 'register' && (
-        <Modal title="註冊免費會員">
-          <p className="text-slate-400 mb-6">加入我們，解鎖專屬點數訂閱服務！</p>
-          <div className="space-y-4">
-            <input type="text" placeholder="使用者名稱" className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition" />
-            <input type="email" placeholder="電子郵件" className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition" />
-            <input type="password" placeholder="密碼" className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition" />
-            <button 
-              onClick={() => {
-                setUser({ name: 'New User', points: 200, subscription: null });
-                setActiveModal(null);
-                alert('註冊成功！系統已發送 200 點體驗點數給您。');
-              }}
-              className="w-full bg-white hover:bg-slate-200 text-black font-bold py-3 rounded-xl transition mt-2 flex justify-center items-center gap-2"
-            >
-              <User className="w-5 h-5" /> 完成註冊
-            </button>
-          </div>
-        </Modal>
-      )}
-
-      {activeModal === 'topup' && (
-        <Modal title="儲值點數額度">
-          {selectedPlan && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-start gap-3">
-              <span className="text-xl">⚠️</span>
-              <div>
-                <p className="font-bold">您的餘額不足以訂閱「{selectedPlan.name}」</p>
-                <p className="text-sm mt-1">目前餘額：{user?.points} 點 / 需扣款：{selectedPlan.price} 點</p>
-              </div>
-            </div>
-          )}
-          
-          <div className="flex items-center justify-between p-4 bg-slate-950 rounded-xl border border-slate-700 mb-6">
-            <span className="text-slate-400">目前餘額</span>
-            <div className="text-2xl font-bold text-amber-400 flex items-center gap-2">
-              <Zap className="w-6 h-6" fill="currentColor" />
-              {user?.points || 0}
-            </div>
-          </div>
-
-          <p className="text-sm text-slate-400 mb-3">請選擇儲值方案 (可支援綠界、信用卡、LINE Pay)：</p>
-          <div className="space-y-3">
-            {[
-              { amount: 500, price: 'NT$ 500' },
-              { amount: 1000, price: 'NT$ 1,000', bonus: '送 100 點' },
-              { amount: 3000, price: 'NT$ 2,800', bonus: '限時 9 折' },
-            ].map((option, idx) => (
-              <button 
-                key={idx}
-                onClick={() => handleTopUp(option.amount + (option.bonus === '送 100 點' ? 100 : 0))}
-                className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-700 hover:border-amber-500 hover:bg-slate-800 transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
-                    <Wallet className="w-5 h-5 text-amber-400" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-bold text-white text-lg">{option.amount} 點</div>
-                    {option.bonus && <div className="text-xs text-green-400 font-medium">{option.bonus}</div>}
-                  </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- 影片 1 -->
+                <div class="group relative rounded-xl overflow-hidden cursor-pointer aspect-video bg-slate-800">
+                    <img src="https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&q=80&w=800&h=450" alt="霓虹之城：暗影" class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="absolute bottom-0 left-0 p-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                        <h3 class="text-lg font-bold text-white">霓虹之城：暗影</h3>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="px-2 py-0.5 bg-amber-500 rounded text-xs font-bold text-black">4K</span>
+                            <span class="text-xs text-slate-300">VIP 限定</span>
+                        </div>
+                    </div>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                        <i data-lucide="play" class="w-5 h-5 text-white ml-1 fill-current"></i>
+                    </div>
                 </div>
-                <div className="font-medium text-slate-300 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-                  {option.price}
+                <!-- 影片 2 -->
+                <div class="group relative rounded-xl overflow-hidden cursor-pointer aspect-video bg-slate-800">
+                    <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&q=80&w=800&h=450" alt="星際迷航：重啟" class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="absolute bottom-0 left-0 p-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                        <h3 class="text-lg font-bold text-white">星際迷航：重啟</h3>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="px-2 py-0.5 bg-amber-500 rounded text-xs font-bold text-black">4K</span>
+                            <span class="text-xs text-slate-300">VIP 限定</span>
+                        </div>
+                    </div>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                        <i data-lucide="play" class="w-5 h-5 text-white ml-1 fill-current"></i>
+                    </div>
                 </div>
-              </button>
-            ))}
-          </div>
-        </Modal>
-      )}
+                <!-- 影片 3 -->
+                <div class="group relative rounded-xl overflow-hidden cursor-pointer aspect-video bg-slate-800">
+                    <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=800&h=450" alt="都市傳說：第四象限" class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="absolute bottom-0 left-0 p-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                        <h3 class="text-lg font-bold text-white">都市傳說：第四象限</h3>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="px-2 py-0.5 bg-amber-500 rounded text-xs font-bold text-black">4K</span>
+                            <span class="text-xs text-slate-300">VIP 限定</span>
+                        </div>
+                    </div>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                        <i data-lucide="play" class="w-5 h-5 text-white ml-1 fill-current"></i>
+                    </div>
+                </div>
+                <!-- 影片 4 -->
+                <div class="group relative rounded-xl overflow-hidden cursor-pointer aspect-video bg-slate-800">
+                    <img src="https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=800&h=450" alt="極限狂飆：東京" class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="absolute bottom-0 left-0 p-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                        <h3 class="text-lg font-bold text-white">極限狂飆：東京</h3>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="px-2 py-0.5 bg-amber-500 rounded text-xs font-bold text-black">4K</span>
+                            <span class="text-xs text-slate-300">VIP 限定</span>
+                        </div>
+                    </div>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                        <i data-lucide="play" class="w-5 h-5 text-white ml-1 fill-current"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
+    <!-- 點數與訂閱方案 Section -->
+    <section id="plans" class="py-24 bg-slate-900 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <h2 class="text-4xl font-bold text-white mb-4">彈性訂閱，隨心所欲</h2>
+                <p class="text-slate-400 text-lg">
+                    先儲值點數，再選擇最適合您的觀看方案。<br />隨時升級、隨時取消，完全由您掌控。
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <!-- 方案 1 -->
+                <div class="relative rounded-3xl p-8 bg-slate-950 border border-slate-800 hover:border-slate-600 transition-all duration-300 hover:-translate-y-2">
+                    <div class="w-14 h-14 rounded-2xl mb-6 flex items-center justify-center bg-gradient-to-br from-blue-500 to-cyan-400">
+                        <i data-lucide="play" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">基礎會員</h3>
+                    <div class="flex items-baseline gap-1 mb-6">
+                        <span class="text-4xl font-extrabold text-white">300</span>
+                        <span class="text-slate-400">點 / 月</span>
+                    </div>
+                    <ul class="space-y-4 mb-8 min-h-[200px]">
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <div class="mt-1 bg-slate-800 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-green-400"></i></div>
+                            <span>解鎖 720p 高畫質</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <div class="mt-1 bg-slate-800 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-green-400"></i></div>
+                            <span>每月可觀看 50 部影片</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <div class="mt-1 bg-slate-800 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-green-400"></i></div>
+                            <span>無廣告體驗</span>
+                        </li>
+                    </ul>
+                    <button id="btn-plan-basic" onclick="handleSubscribe('基礎會員', 300)" class="w-full py-4 rounded-xl font-bold text-lg transition-all bg-slate-800 text-white hover:bg-slate-700 hover:scale-[1.02]">
+                        立即訂閱
+                    </button>
+                </div>
+
+                <!-- 方案 2 (最受歡迎) -->
+                <div class="relative rounded-3xl p-8 bg-slate-950 border border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.15)] transition-all duration-300 hover:-translate-y-2">
+                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full text-black text-sm font-bold shadow-lg">
+                        最受歡迎 / 最佳 CP 值
+                    </div>
+                    <div class="w-14 h-14 rounded-2xl mb-6 flex items-center justify-center bg-gradient-to-br from-amber-400 to-orange-500">
+                        <i data-lucide="crown" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">尊榮 VIP</h3>
+                    <div class="flex items-baseline gap-1 mb-6">
+                        <span class="text-4xl font-extrabold text-white">800</span>
+                        <span class="text-slate-400">點 / 月</span>
+                    </div>
+                    <ul class="space-y-4 mb-8 min-h-[200px]">
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <div class="mt-1 bg-slate-800 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-green-400"></i></div><span>解鎖 4K 超高畫質</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <div class="mt-1 bg-slate-800 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-green-400"></i></div><span>無限次數觀看</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <div class="mt-1 bg-slate-800 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-green-400"></i></div><span>無廣告體驗</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <div class="mt-1 bg-slate-800 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-green-400"></i></div><span>優先觀看最新上架影片</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <div class="mt-1 bg-slate-800 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-green-400"></i></div><span>專屬客服</span>
+                        </li>
+                    </ul>
+                    <button id="btn-plan-premium" onclick="handleSubscribe('尊榮 VIP', 800)" class="w-full py-4 rounded-xl font-bold text-lg transition-all bg-gradient-to-r from-amber-400 to-orange-500 text-black hover:shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:scale-[1.02]">
+                        立即訂閱
+                    </button>
+                </div>
+
+                <!-- 方案 3 -->
+                <div class="relative rounded-3xl p-8 bg-slate-950 border border-slate-800 hover:border-slate-600 transition-all duration-300 hover:-translate-y-2">
+                    <div class="w-14 h-14 rounded-2xl mb-6 flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500">
+                        <i data-lucide="star" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">無限暢看通行證</h3>
+                    <div class="flex items-baseline gap-1 mb-6">
+                        <span class="text-4xl font-extrabold text-white">1500</span>
+                        <span class="text-slate-400">點 / 月</span>
+                    </div>
+                    <ul class="space-y-4 mb-8 min-h-[200px]">
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <div class="mt-1 bg-slate-800 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-green-400"></i></div><span>包含 VIP 所有功能</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <div class="mt-1 bg-slate-800 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-green-400"></i></div><span>可支援 4 個裝置同時觀看</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <div class="mt-1 bg-slate-800 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-green-400"></i></div><span>線下影片下載</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <div class="mt-1 bg-slate-800 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-green-400"></i></div><span>專屬實體活動邀請</span>
+                        </li>
+                    </ul>
+                    <button id="btn-plan-ultimate" onclick="handleSubscribe('無限暢看通行證', 1500)" class="w-full py-4 rounded-xl font-bold text-lg transition-all bg-slate-800 text-white hover:bg-slate-700 hover:scale-[1.02]">
+                        立即訂閱
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 py-12 border-t border-slate-900 text-center text-slate-500">
+        <div class="flex items-center justify-center gap-2 mb-4">
+            <i data-lucide="play" class="w-5 h-5 text-amber-500 fill-current"></i>
+            <span class="text-xl font-bold text-white tracking-wider">Juicy Stream</span>
+        </div>
+        <p class="text-sm">© 2026 Juicy Stream. 電商神助手團隊 示範原型. All rights reserved.</p>
+    </footer>
+
+    <!-- ===== 互動 Modals 彈窗區 ===== -->
+    <div id="modal-container" class="hidden-el fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        
+        <!-- 登入視窗 -->
+        <div id="modal-login" class="hidden-el w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl relative modal-animate">
+            <button onclick="closeModals()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="p-6 border-b border-slate-800">
+                <h3 class="text-xl font-bold text-white">登入會員</h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-slate-400 mb-6">歡迎回來，請登入以繼續您的影音體驗。</p>
+                <input type="email" placeholder="電子郵件" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition" />
+                <input type="password" placeholder="密碼" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition" />
+                <button onclick="doLogin()" class="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 rounded-xl transition mt-2">
+                    登入
+                </button>
+                <div class="text-center mt-4 text-sm text-slate-400">
+                    還沒有帳號嗎？ <button onclick="openModal('register')" class="text-amber-400 hover:underline">立即註冊</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 註冊視窗 -->
+        <div id="modal-register" class="hidden-el w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl relative modal-animate">
+            <button onclick="closeModals()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="p-6 border-b border-slate-800">
+                <h3 class="text-xl font-bold text-white">註冊免費會員</h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-slate-400 mb-6">加入我們，解鎖專屬點數訂閱服務！</p>
+                <input type="text" placeholder="使用者名稱" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition" />
+                <input type="email" placeholder="電子郵件" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition" />
+                <input type="password" placeholder="密碼" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition" />
+                <button onclick="doRegister()" class="w-full bg-white hover:bg-slate-200 text-black font-bold py-3 rounded-xl transition mt-2 flex justify-center items-center gap-2">
+                    <i data-lucide="user" class="w-5 h-5"></i> 完成註冊
+                </button>
+            </div>
+        </div>
+
+        <!-- 儲值視窗 -->
+        <div id="modal-topup" class="hidden-el w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl relative modal-animate">
+            <button onclick="closeModals()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="p-6 border-b border-slate-800">
+                <h3 class="text-xl font-bold text-white">儲值點數額度</h3>
+            </div>
+            <div class="p-6">
+                <!-- 餘額不足提示區 -->
+                <div id="insufficient-warning" class="hidden-el mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-start gap-3">
+                    <span class="text-xl">⚠️</span>
+                    <div>
+                        <p class="font-bold" id="warning-plan-name">您的餘額不足</p>
+                        <p class="text-sm mt-1" id="warning-plan-details">目前餘額：0 點 / 需扣款：0 點</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between p-4 bg-slate-950 rounded-xl border border-slate-700 mb-6">
+                    <span class="text-slate-400">目前餘額</span>
+                    <div class="text-2xl font-bold text-amber-400 flex items-center gap-2">
+                        <i data-lucide="zap" class="w-6 h-6 fill-current"></i>
+                        <span id="modal-points-display">0</span>
+                    </div>
+                </div>
+
+                <p class="text-sm text-slate-400 mb-3">請選擇儲值方案 (可支援綠界、信用卡、LINE Pay)：</p>
+                <div class="space-y-3">
+                    <!-- 儲值選項 1 -->
+                    <button onclick="doTopUp(500)" class="w-full flex items-center justify-between p-4 rounded-xl border border-slate-700 hover:border-amber-500 hover:bg-slate-800 transition-all group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
+                                <i data-lucide="wallet" class="w-5 h-5 text-amber-400"></i>
+                            </div>
+                            <div class="text-left">
+                                <div class="font-bold text-white text-lg">500 點</div>
+                            </div>
+                        </div>
+                        <div class="font-medium text-slate-300 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">NT$ 500</div>
+                    </button>
+                    <!-- 儲值選項 2 -->
+                    <button onclick="doTopUp(1100)" class="w-full flex items-center justify-between p-4 rounded-xl border border-slate-700 hover:border-amber-500 hover:bg-slate-800 transition-all group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
+                                <i data-lucide="wallet" class="w-5 h-5 text-amber-400"></i>
+                            </div>
+                            <div class="text-left">
+                                <div class="font-bold text-white text-lg">1000 點</div>
+                                <div class="text-xs text-green-400 font-medium">送 100 點</div>
+                            </div>
+                        </div>
+                        <div class="font-medium text-slate-300 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">NT$ 1,000</div>
+                    </button>
+                    <!-- 儲值選項 3 -->
+                    <button onclick="doTopUp(3000)" class="w-full flex items-center justify-between p-4 rounded-xl border border-slate-700 hover:border-amber-500 hover:bg-slate-800 transition-all group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
+                                <i data-lucide="wallet" class="w-5 h-5 text-amber-400"></i>
+                            </div>
+                            <div class="text-left">
+                                <div class="font-bold text-white text-lg">3000 點</div>
+                                <div class="text-xs text-green-400 font-medium">限時 9 折</div>
+                            </div>
+                        </div>
+                        <div class="font-medium text-slate-300 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">NT$ 2,800</div>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-  );
-};
 
-export default App;
+    <!-- 核心邏輯 JavaScript -->
+    <script>
+        // 初始化 Icons
+        lucide.createIcons();
+
+        // 導覽列滾動效果
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('bg-slate-950/90', 'backdrop-blur-md', 'shadow-lg');
+                navbar.classList.remove('bg-transparent', 'py-5');
+                navbar.classList.add('py-3');
+            } else {
+                navbar.classList.remove('bg-slate-950/90', 'backdrop-blur-md', 'shadow-lg', 'py-3');
+                navbar.classList.add('bg-transparent', 'py-5');
+            }
+        });
+
+        // 狀態變數
+        let user = null; // 格式: { points: 0, subscription: null }
+        let selectedPlan = null; // 格式: { name: '...', price: 0 }
+
+        // --- UI 更新邏輯 ---
+        function updateUI() {
+            const authGuest = document.getElementById('auth-guest');
+            const authUser = document.getElementById('auth-user');
+            
+            if (user) {
+                // 已登入
+                authGuest.classList.add('hidden-el');
+                authUser.classList.remove('hidden-el');
+                authUser.classList.add('flex');
+                
+                // 更新點數
+                document.getElementById('user-points-display').innerText = user.points;
+                document.getElementById('modal-points-display').innerText = user.points;
+
+                // 更新訂閱狀態與頭像 Title
+                const avatar = document.getElementById('user-avatar');
+                const badge = document.getElementById('user-subscription-badge');
+                if (user.subscription) {
+                    avatar.title = `已訂閱: ${user.subscription}`;
+                    badge.classList.remove('hidden-el');
+                } else {
+                    avatar.title = `未訂閱`;
+                    badge.classList.add('hidden-el');
+                }
+            } else {
+                // 未登入
+                authGuest.classList.remove('hidden-el');
+                authGuest.classList.add('flex');
+                authUser.classList.add('hidden-el');
+                authUser.classList.remove('flex');
+            }
+
+            updatePlanButtons();
+        }
+
+        // 更新方案按鈕樣式
+        function updatePlanButtons() {
+            const plans = [
+                { id: 'basic', name: '基礎會員', popular: false },
+                { id: 'premium', name: '尊榮 VIP', popular: true },
+                { id: 'ultimate', name: '無限暢看通行證', popular: false }
+            ];
+
+            plans.forEach(plan => {
+                const btn = document.getElementById(`btn-plan-${plan.id}`);
+                if (!btn) return;
+
+                if (user && user.subscription === plan.name) {
+                    // 已訂閱此方案
+                    btn.innerText = '目前方案';
+                    btn.className = 'w-full py-4 rounded-xl font-bold text-lg transition-all bg-slate-800 text-slate-400 cursor-default';
+                    btn.onclick = null; // 移除點擊事件
+                } else {
+                    // 未訂閱或訂閱其他方案
+                    btn.innerText = '立即訂閱';
+                    if (plan.popular) {
+                        btn.className = 'w-full py-4 rounded-xl font-bold text-lg transition-all bg-gradient-to-r from-amber-400 to-orange-500 text-black hover:shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:scale-[1.02]';
+                    } else {
+                        btn.className = 'w-full py-4 rounded-xl font-bold text-lg transition-all bg-slate-800 text-white hover:bg-slate-700 hover:scale-[1.02]';
+                    }
+                    btn.onclick = () => handleSubscribe(plan.name, plan.id === 'basic' ? 300 : (plan.id === 'premium' ? 800 : 1500));
+                }
+            });
+        }
+
+        // --- Modal 控制邏輯 ---
+        function openModal(type) {
+            document.getElementById('modal-container').classList.remove('hidden-el');
+            
+            // 隱藏所有視窗
+            document.getElementById('modal-login').classList.add('hidden-el');
+            document.getElementById('modal-register').classList.add('hidden-el');
+            document.getElementById('modal-topup').classList.add('hidden-el');
+
+            // 顯示目標視窗
+            const targetModal = document.getElementById(`modal-${type}`);
+            targetModal.classList.remove('hidden-el');
+
+            // 如果是打開儲值，且有帶入準備購買的方案，則顯示警告
+            if (type === 'topup') {
+                const warningBox = document.getElementById('insufficient-warning');
+                if (selectedPlan && user && user.points < selectedPlan.price) {
+                    document.getElementById('warning-plan-name').innerText = `您的餘額不足以訂閱「${selectedPlan.name}」`;
+                    document.getElementById('warning-plan-details').innerText = `目前餘額：${user.points} 點 / 需扣款：${selectedPlan.price} 點`;
+                    warningBox.classList.remove('hidden-el');
+                } else {
+                    warningBox.classList.add('hidden-el');
+                }
+            }
+        }
+
+        function closeModals() {
+            document.getElementById('modal-container').classList.add('hidden-el');
+            selectedPlan = null; // 關閉視窗時清空暫存的購買方案
+        }
+
+        // 點擊背景關閉 Modal
+        document.getElementById('modal-container').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModals();
+            }
+        });
+
+        // --- 業務邏輯 ---
+        function doLogin() {
+            user = { points: 0, subscription: null };
+            alert('登入成功！(示範體驗，預設點數為 0)');
+            updateUI();
+            closeModals();
+        }
+
+        function doRegister() {
+            user = { points: 200, subscription: null };
+            alert('註冊成功！系統已發送 200 點體驗點數給您。');
+            updateUI();
+            closeModals();
+        }
+
+        function handleSubscribe(planName, planPrice) {
+            if (!user) {
+                openModal('login');
+                return;
+            }
+
+            selectedPlan = { name: planName, price: planPrice };
+
+            if (user.points < planPrice) {
+                // 點數不足，引導儲值
+                openModal('topup');
+            } else {
+                // 點數足夠，扣款並訂閱
+                user.points -= planPrice;
+                user.subscription = planName;
+                alert(`🎉 成功訂閱「${planName}」！開始您的專屬影音饗宴。`);
+                selectedPlan = null;
+                updateUI();
+            }
+        }
+
+        function doTopUp(amount) {
+            if(!user) return;
+
+            user.points += amount;
+
+            // 檢查是否有正在等待購買的方案
+            if (selectedPlan && user.points >= selectedPlan.price) {
+                const confirmBuy = window.confirm(`儲值成功！您現在有足夠點數訂閱「${selectedPlan.name}」，是否立即訂閱？`);
+                if (confirmBuy) {
+                    user.points -= selectedPlan.price;
+                    user.subscription = selectedPlan.name;
+                    alert(`🎉 成功訂閱「${selectedPlan.name}」！`);
+                }
+                selectedPlan = null;
+            } else {
+                alert(`💰 成功儲值 ${amount} 點！`);
+            }
+            
+            updateUI();
+            closeModals();
+        }
+
+        // 初始化
+        updateUI();
+
+    </script>
+</body>
+</html>
